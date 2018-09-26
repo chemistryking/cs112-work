@@ -1,0 +1,871 @@
+Script started on Mon 19 Sep 2016 10:12:33 AM EDT
+mrn6@chomsky:~/workspace/112/project_01$ ls
+Application.cpp  PlayList.cpp	     saveFile.txt    SongTester.h
+Application.h	 PlayList.h	     Song.cpp	     testSongs.txt
+Debug		 PlayListTester.cpp  Song.h	     typescript
+main.cpp	 PlayListTester.h    SongTester.cpp
+mrn6@chomsky:~/workspace/112/project_01$ cat Application./ cpp
+/* A class designed to accomodate a loop through which the user enters input in order to manage playlist.
+ * application.cpp
+ *
+ *  Created on: Sep 17, 2016
+ *      Author: Matthew Nykamp
+ */
+
+#include "Application.h"
+#include <iostream>
+#include <fstream>
+#include <vector>
+#include <string>
+using namespace std;
+
+/* Application constructor
+ * Postcondition: bool IsRunning is false, uses file fileName to get the playlist.
+ */
+Application::Application(const string& fileName) {
+	isRunning = false;
+	file = fileName;
+}
+/* This method takes no arguments and instead makes a loop, only ended by entering 0.
+ * It has options to search a playlist by either artist, year, or by phrase,
+ * to add or remove a song, or to save the playlist to a file.
+ *
+ */
+
+void Application::start() {
+	PlayList pList(file.c_str());
+
+	isRunning = true;
+	cout << "Welcome to the Playlist Manager!" << endl;
+	cout << "Please enter your selection: " << endl << endl;
+	int choice;
+
+	while (isRunning) {
+		cout << endl << "1:  Search playlist for songs by artist " << endl;
+		cout << "2:  Search playlist for songs by year " << endl;
+		cout
+				<< "3:  Search playlist for songs with a given phrase in their title "
+				<< endl;
+		cout << "4:  Add a song to the playlist " << endl;
+		cout << "5:  Remove a song from the playlist " << endl;
+		cout << "6:  Save the playlist" << endl;
+		cout << "0:  Quit " << endl << endl;
+
+		cin >> choice;
+		cin.ignore(100,'\n');
+		while (!(choice == 0 || choice == 1 || choice == 2 || choice == 3
+				|| choice == 4 || choice == 5 || choice == 6)) {
+			cout << "Please enter a number between 0 and 6." << endl;
+			cin >> choice;
+			cin.ignore(100,'\n');
+		}
+		if (choice == 0) {
+			isRunning = 0;
+		} else if (choice == 1) {
+			cout << "Please enter one word in the name of the artist: " << endl;
+			string artist;
+			cin >> artist;
+			cin.ignore(100,'\n');
+			vector<Song> artistSearch = pList.searchByArtist(artist);
+			for (unsigned i = 0; i < artistSearch.size(); i++) {
+				cout << artistSearch[i].getTitle() << " by "
+						<< artistSearch[i].getArtist() << " released in "
+						<< artistSearch[i].getYear() << endl;
+			}
+		} else if (choice == 2) {
+			cout << "Please enter the year a song was released: " << endl;
+			unsigned year;
+			cin >> year;
+			cin.ignore(100,'\n');
+			vector<Song> yearSearch = pList.searchByYear(year);
+			for (unsigned i = 0; i < yearSearch.size(); i++) {
+				cout << yearSearch[i].getTitle() << " by "
+						<< yearSearch[i].getArtist() << " released in "
+						<< yearSearch[i].getYear() << endl;
+			}
+		} else if (choice == 3) {
+			cout << "Please enter a keyword to search by title: " << endl;
+			string keyword;
+			cin >> keyword;
+			cin.ignore(100,'\n');
+			vector<Song> keywordSearch = pList.searchByTitlePhrase(keyword);
+			for (unsigned i = 0; i < keywordSearch.size(); i++) {
+				cout << keywordSearch[i].getTitle() << " by "
+						<< keywordSearch[i].getArtist() << " released in "
+						<< keywordSearch[i].getYear() << endl;
+			}
+		} else if (choice == 4) {
+			string songName, artistName;
+			cout << "Please enter the name of the song to be added: " << endl;
+			getline(cin, songName);
+			unsigned date;
+			cout << "Please enter the date the song was released: " << endl;
+			cin >> date;
+			cin.ignore(100,'\n');
+			cout << "Please enter the artist of the song to be added: " << endl;
+			getline(cin, artistName);
+			Song newSong(songName, artistName, date);
+			pList.addSong(newSong);
+		} else if (choice == 5) {
+			string songName, artistName;
+			cout << "Please enter the name of the song to be removed: " << endl;
+			getline(cin, songName);
+			cout << "Please enter the artist of the song to be removed: "
+					<< endl;
+			getline(cin, artistName);
+			unsigned date;
+			cout << "Please enter the date the song was released: " << endl;
+			cin >> date;
+			cin.ignore(100,'\n');
+			Song newSong(songName, artistName, date);
+			pList.removeSong(newSong);
+		} else if (choice == 6) {
+			cout << "Enter the name of the file you would like to save it in: "
+					<< endl;
+			string saveName;
+			cin >> saveName;
+			cin.ignore(100,'\n');
+			pList.save(saveName);
+			cout << "File was saved." << endl;
+		}
+	}
+
+}
+
+mrn6@chomsky:~/workspace/112/project_01$ cat Application.h
+/* Header for the application class.
+ * application.h
+ *
+ *  Created on: Sep 17, 2016
+ *      Author: Matthew Nykamp
+ */
+
+#ifndef APPLICATION_H_
+#define APPLICATION_H_
+
+#include "PlayList.h"
+#include <string>
+
+class Application {
+public:
+	Application(const string&);
+	void start();
+private:
+	bool isRunning;
+	string file;
+};
+
+
+
+#endif /* APPLICATION_H_ */
+mrn6@chomsky:~/workspace/112/project_01$ cat M` 
+cat: M: No such file or directory
+mrn6@chomsky:~/workspace/112/project_01$ cat Main.cpp
+cat: Main.cpp: No such file or directory
+mrn6@chomsky:~/workspace/112/project_01$ cat PlayList.cpoo  p
+/* PlayList.cpp defines the PlayList methods.
+ *
+ * Student Name: Matthew Nykamp
+ * Date: 09-13-16
+ * Begun by: Joel Adams, for CS 112 at Calvin College.
+ */
+
+#include "PlayList.h"
+#include <fstream>
+#include <iostream>
+#include <cassert>
+using namespace std;
+
+/* PlayList constructor
+ * @param: fileName, a string
+ * Precondition: fileName contains the name of a playlist file.
+ */
+PlayList::PlayList(const string& fileName) {
+	// open a stream to the playlist file
+	ifstream fin(fileName.c_str());
+	assert(fin.is_open());
+
+	// read each song and append it to mySongs
+	Song s;
+	while (true) {
+		s.readFrom(fin);
+		if (!fin) {
+			break;
+		}
+		string separator;
+		getline(fin, separator);
+		mySongs.push_back(s);
+	}
+
+	// close the stream
+	fin.close();
+}
+
+/* Retrieve length of the playlist
+ * Return: the number of songs in the playlist.
+ */
+unsigned PlayList::getNumSongs() const {
+	return mySongs.size();
+}
+
+vector<Song> PlayList::searchByArtist(const string& artist) const {
+	vector<Song> v;
+
+	for (unsigned i = 0; i < mySongs.size(); i++) {
+		if (mySongs[i].getArtist().find(artist) != string::npos) {
+			v.push_back(mySongs[i]);
+		}
+	}
+
+	return v;
+}
+
+/*Returns all songs that were made in  the integer year, the year that was passed in.
+ *
+ */
+vector<Song> PlayList::searchByYear(const unsigned& year) const {
+	vector<Song> v;
+
+	for (unsigned i = 0; i < mySongs.size(); i++) {
+		if (mySongs[i].getYear() == year) {
+			v.push_back(mySongs[i]);
+		}
+	}
+
+	return v;
+}
+
+/*Returns all songs in the playlist that have phrase, an argument, anywhere in their title.
+ *
+ */
+vector<Song> PlayList::searchByTitlePhrase(const string& phrase) const {
+	vector<Song> v;
+
+	for (unsigned i = 0; i < mySongs.size(); i++) {
+		if (mySongs[i].getTitle().find(phrase) != string::npos) {
+			v.push_back(mySongs[i]);
+		}
+	}
+
+	return v;
+}
+
+/* Adds a song, which is passed in, to the playlist.
+ *
+ */
+void PlayList::addSong(const Song& newSong) {
+	mySongs.push_back(newSong);
+}
+
+/*  Precondition: There is a song in the playlist with the title, artist, and year as the song passed in.
+ *  Postcondition: The first instance of the matching song is removed from the playlist.
+ */
+void PlayList::removeSong(const Song& aSong) {
+	for (unsigned i = 0; i < mySongs.size(); i++) {
+		if (mySongs[i] == aSong) {
+			mySongs.erase(mySongs.begin() + i);
+		}
+	}
+}
+
+//Saves the playlist to a target file named "name", each song with three lines: first the title, then the artist, then the year.
+
+void PlayList::save(const string& name) {
+	ofstream fout(name.c_str());
+	assert(fout.is_open());
+
+	for (unsigned i = 0; i < mySongs.size(); i++) {
+		fout << mySongs[i].getTitle() << endl;
+		fout << mySongs[i].getArtist() << endl;
+		fout << mySongs[i].getYear() << endl;
+		fout << endl;
+	}
+}
+
+//Gets the song at index i from the playlist
+Song PlayList::getSong(const unsigned& index) {
+	return mySongs[index];
+}
+mrn6@chomsky:~/workspace/112/project_01$ cat PlayList.h
+/* PlayList.h declares class PlayList.
+ * Student Name: Matthew Nykamp
+ * Date: 09-13-16
+ * Begun by: Joel Adams, for CS 112 at Calvin College.
+ */
+
+#ifndef PLAYLIST_H_
+#define PLAYLIST_H_
+
+#include <string>
+#include "Song.h"
+#include <vector>
+using namespace std;
+
+class PlayList {
+public:
+	PlayList(const string& fileName);
+	unsigned getNumSongs() const;
+	vector<Song> searchByArtist(const string&) const;
+	vector<Song> searchByYear(const unsigned&) const;
+	vector<Song> searchByTitlePhrase(const string& phrase) const;
+	void addSong(const Song&);
+	void removeSong(const Song&);
+	void save(const string&);
+	Song getSong(const unsigned&);
+private:
+	vector<Song> mySongs;
+};
+
+#endif /*PLAYLIST_H_*/
+mrn6@chomsky:~/workspace/112/project_01$ cat PlayListTester.cpp
+/* PlayListTester.cpp defines the PlayList test-methods.
+ * Student Name: Matthew Nykamp
+ * Date: 09-13-16
+ * Begun by: Joel Adams, for CS 112 at Calvin College.
+ */
+
+#include "PlayListTester.h"
+#include <iostream>
+using namespace std;
+#include "PlayList.h"
+#include <cassert>
+#include <vector>
+
+void PlayListTester::runTests() {
+	cout << "\nTesting class PlayList..." << endl;
+	testConstructors();
+	testSearchByArtist();
+	testSearchByYear();
+	testSearchByPhrase();
+	testAddRemove();
+	testSave();
+	cout << "All tests passed!" << endl;
+}
+
+void PlayListTester::testConstructors() {
+	cout << "- constructors..." << flush;
+	PlayList pList("testSongs.txt");
+	assert(pList.getNumSongs() == 5);
+	cout << " 0 " << flush;
+
+	cout << " Passed!" << endl;
+}
+
+void PlayListTester::testSearchByArtist() {
+	cout << "- searchByArtist()... " << flush;
+	// load a playlist with test songs
+	PlayList pList("testSongs.txt");
+
+	// empty case (0)
+	vector<Song> searchResult = pList.searchByArtist("Cream");
+	assert(searchResult.size() == 0);
+	cout << " 0 " << flush;
+
+	// case of 1
+	searchResult = pList.searchByArtist("Baez");
+	assert(searchResult.size() == 1);
+	assert(searchResult[0].getTitle() == "Let It Be");
+	cout << " 1 " << flush;
+
+	// case of 2
+	searchResult = pList.searchByArtist("Beatles");
+	assert(searchResult.size() == 2);
+	assert(searchResult[0].getTitle() == "Let It Be");
+	assert(searchResult[1].getTitle() == "Penny Lane");
+	cout << " 2 " << flush;
+
+	cout << " Passed!" << endl;
+}
+
+void PlayListTester::testSearchByYear() {
+	cout << "- testSearchByYear()" << flush;
+	PlayList pList("testSongs.txt");
+
+	vector<Song> searchResult = pList.searchByYear(1967);
+	assert(searchResult.size() == 2);
+	assert(searchResult[0].getTitle() == "Let It Be");
+	assert(searchResult[1].getTitle() == "Penny Lane");
+	cout << " 0 " << flush;
+
+	searchResult = pList.searchByYear(2012);
+	assert(searchResult.size() == 1);
+	assert(searchResult[0].getTitle() == "Call Me Maybe");
+	cout << " 1 " << flush;
+
+	searchResult = pList.searchByYear(2015);
+	assert(searchResult.size() == 0);
+	cout << " 2 " << flush;
+
+	cout << " Passed!" << endl;
+}
+
+void PlayListTester::testSearchByPhrase() {
+	cout << "- testSearchByPhrase()" << flush;
+	PlayList pList("testSongs.txt");
+
+	vector<Song> searchResult = pList.searchByTitlePhrase("Let");
+	assert(searchResult[0].getArtist() == "The Beatles");
+	assert(searchResult[1].getArtist() == "Joan Baez");
+	cout << " 0 " << flush;
+
+	searchResult = pList.searchByTitlePhrase("Maybe");
+	assert(searchResult[0].getTitle() == "Call Me Maybe");
+	assert(searchResult[1].getTitle() == "Maybe Lane");
+	cout << " 1 " << flush;
+
+	searchResult = pList.searchByTitlePhrase("Lane");
+	assert(searchResult[0].getTitle() == "Penny Lane");
+	assert(searchResult[1].getTitle() == "Maybe Lane");
+	cout << " 2 " << flush;
+
+	cout << " Passed!" << endl;
+}
+
+void PlayListTester::testAddRemove() {
+	cout << "- testAddRemove()" << flush;
+	PlayList pList("testSongs.txt");
+
+	pList.addSong(Song("Bob", "Bobbers", 1980));
+	assert(pList.getNumSongs() == 6);
+	vector<Song> searchResult = pList.searchByArtist("Bobbers");
+	assert(searchResult[0].getTitle() == "Bob");
+	cout << " 0 " << flush;
+
+	pList.removeSong(Song("Call Me Maybe", "Carly Rae Jepsen", 2012));
+	assert(pList.getNumSongs() == 5);
+	searchResult = pList.searchByArtist("Carly Rae Jepsen");
+	assert(searchResult.size()==0);
+	cout << " 1 " << flush;
+
+	cout << " Passed!" << endl;
+}
+
+void PlayListTester::testSave() {
+	cout << "- testSave()" << flush;
+	PlayList pList("testSongs.txt");
+	pList.save("saveFile.txt");
+	PlayList pList2("saveFile.txt");
+
+	for (unsigned i = 0; i < pList.getNumSongs(); i ++) {
+		assert(pList.getSong(i)==pList2.getSong(i));
+	}
+	cout << " Passed!" << endl;
+}
+mrn6@chomsky:~/workspace/112/project_01$ cat PlayListTester.h
+/* PlayListTester.h tests the PlayList class.
+ * Student Name: Matthew Nykamp
+ * Date: 09-13-16
+ * Begun by: Joel Adams, for CS 112 at Calvin College.
+ */
+
+#ifndef PLAYLISTTESTER_
+#define PLAYLISTTESTER_
+
+class PlayListTester {
+public:
+	void runTests();
+	void testConstructors();
+	void testSearchByArtist();
+	void testSearchByYear();
+	void testSearchByPhrase();
+	void testAddRemove();
+	void testSave();
+};
+
+#endif /*PLAYLISTTESTER_*/
+mrn6@chomsky:~/workspace/112/project_01$ cat Song.cpp
+/*
+ * Song.cpp
+ *
+ *  Created on: Sep 13, 2016
+ *      Author: mrn6
+ */
+
+#include <string>
+#include "Song.h"
+#include <fstream>
+#include <cstdlib>
+
+Song::Song() {
+	myTitle = myArtist = "";
+	myYear = 0;
+}
+
+Song::Song(string title, string artist, unsigned year) {
+	myTitle = title;
+	myArtist = artist;
+	myYear = year;
+}
+
+string Song::getTitle() const {
+	return myTitle;
+}
+
+string Song::getArtist() const {
+	return myArtist;
+}
+
+unsigned Song::getYear() const {
+	return myYear;
+}
+
+/* Song input method...
+ * @param: in, an istream
+ * Precondition: in contains the title, artist, and year data for a Song.
+ * Postcondition: the title, artist, and year data have been read from in &&
+ *                 myTitle == title &&
+ *                 myArtist == artist &&
+ *                 myYear == year.
+ */
+void Song::readFrom(istream& in) {
+	getline(in, myTitle);
+	getline(in, myArtist);
+	string yearString;
+	getline(in, yearString);
+	myYear = atoi(yearString.c_str());
+}
+
+void Song::writeTo(ostream& out) const {
+	out << myTitle << '\n'
+	<< myArtist << '\n'
+	<< myYear << '\n';
+}
+/* Song equals operator...
+ * @param: song2, a Song
+ * Precondition: Song contains an artist, title, and year.
+ * Postcondition: the title, artist, and year have been compared and true will return if
+ * 				  they are the same as the song we are comparing against.
+ */
+bool Song::operator==(const Song& song2) {
+	return song2.getArtist()==getArtist() && song2.getTitle()==getTitle() && song2.getYear()==getYear();
+}
+
+mrn6@chomsky:~/workspace/112/project_01$ cat Song.h
+/* Song.h declares a class for storing song information.
+ * Student Name: Matthew Nykamp
+ * Date: 09-13-16
+ * Begun by: Joel Adams, for CS 112 at Calvin College.
+ */
+
+#ifndef SONG_H_
+#define SONG_H_
+
+#include <string>
+
+using namespace std;
+
+class Song {
+public:
+	Song();
+	Song(string, string, unsigned);
+	string getTitle() const;
+	string getArtist() const;
+	unsigned getYear() const;
+	void readFrom(istream&);
+	void writeTo(ostream&) const;
+	bool operator==(const Song& song2);
+private:
+	string myTitle;
+	string myArtist;
+	unsigned myYear;
+};
+
+#endif /* SONG_H_ */
+mrn6@chomsky:~/workspace/112/project_01$ cat SongTester.cpp
+/* SongTester.cpp defines the test-methods for class SongTester.
+    * Student Name: Matthew Nykamp
+    * Date: 09-13-16
+    * Begun by: Joel Adams, for CS 112 at Calvin College.
+    */
+
+#include "SongTester.h"
+#include <iostream>
+#include <cassert>
+#include "Song.h"
+#include <fstream>
+
+using namespace std;
+
+void SongTester::runTests() {
+   cout << "Testing class Song..." << endl;
+   testConstructors();
+   cout << "Testing ReadFrom... " << endl;
+   testReadFrom();
+   cout << "Testing WriteTo... " << endl;
+   testWriteTo();
+   cout << "Testing the == operator..." << endl;
+   testEquals();
+   cout << "All tests passed!" << endl;
+}
+
+void SongTester::testConstructors() {
+	cout << "- constructors ... \n" << flush;
+	//Default
+	Song s;
+	assert( s.getTitle() == "");
+	assert( s.getArtist() == "");
+	assert( s.getYear() == 0);
+	cout << " 0 " << flush;
+	//Explicit
+	Song s1("Badge", "Cream",1969);
+	assert( s1.getTitle() == "Badge");
+	assert( s1.getArtist() == "Cream");
+	assert( s1.getYear() == 1969);
+	cout << " 1 " << flush;
+	cout << "Passed!" << endl;
+}
+
+void SongTester::testReadFrom() {
+	ifstream fin("testSongs.txt");
+	assert(fin.is_open());
+	Song s;
+
+	// read first song in test playlist
+	s.readFrom(fin);
+	assert(s.getTitle() == "Call Me Maybe");
+	assert(s.getArtist() == "Carly Rae Jepsen");
+	assert(s.getYear() == 2012);
+	cout << " 0 " << flush;
+	string separator;
+	getline(fin, separator);
+
+	// read second song in test playlist
+	s.readFrom(fin);
+	assert(s.getTitle() == "Let It Be");
+	assert(s.getArtist() == "The Beatles");
+	assert(s.getYear() == 1967);
+	cout << " 1 " << flush;
+	getline(fin, separator);
+
+	// read third song in test playlist
+	s.readFrom(fin);
+	assert(s.getTitle() == "Let It Be");
+	assert(s.getArtist() == "Joan Baez");
+	assert(s.getYear() == 1971);
+	cout << " 2 " << flush;
+
+	cout << "Passed!" << endl;
+}
+
+void SongTester::testWriteTo() {
+
+	// declare three songs
+	Song s1("Badge", "Cream", 1969);
+	Song s2("Godzilla", "Blue Oyster Cult", 1977);
+	Song s3("Behind Blue Eyes", "The Who", 1971);
+
+	// write the three songs to an output file
+	ofstream fout("../testSongOutput.txt");
+	assert(fout.is_open());
+	s1.writeTo(fout);
+	s2.writeTo(fout);
+	s3.writeTo(fout);
+	fout.close();
+
+	// use readFrom() to see if writeTo() worked
+	ifstream fin("../testSongOutput.txt");
+	assert(fin.is_open());
+	Song s4, s5, s6;
+
+	// read and check the first song
+	s4.readFrom(fin);
+	assert(s4.getTitle() == "Badge");
+	assert(s4.getArtist() == "Cream");
+	assert(s4.getYear() == 1969);
+	cout << " 0 " << flush;
+
+	// read and check the second song
+	s5.readFrom(fin);
+	assert(s5.getTitle() == "Godzilla");
+	assert(s5.getArtist() == "Blue Oyster Cult");
+	assert(s5.getYear() == 1977);
+	cout << " 1 " << flush;
+
+	// read and check the third song
+	s6.readFrom(fin);
+	assert(s6.getTitle() == "Behind Blue Eyes");
+	assert(s6.getArtist() == "The Who");
+	assert(s6.getYear() == 1971);
+	cout << " 2 " << flush;
+
+	fin.close();
+	cout << " Passed!" << endl;
+}
+
+void SongTester::testEquals() {
+	Song s1("Name", "Artist", 1900);
+	Song s2("Name", "Artist", 1900);
+	Song s3("Different Name", "Different Artist", 2000);
+	assert(s1==s2);
+	cout << " 0 " << flush;
+	assert(!(s1==s3));
+	cout << " 1 " << flush;
+
+	cout << " Passed!" << endl;
+}
+mrn6@chomsky:~/workspace/112/project_01$ cat SongTester.h
+/* SongTester.h declares a test-class for class Song.
+    * Student Name: Matthew Nykamp
+    * Date: 09-13-16
+    * Begun by: Joel Adams, for CS 112 at Calvin College.
+    */
+
+#ifndef SONGTESTER_H_
+#define SONGTESTER_H_
+
+class SongTester {
+public:
+   void runTests();
+   void testConstructors();
+   void testReadFrom();
+   void testWriteTo();
+   void testEquals();
+};
+
+#endif /*SONGTESTER_H_*/
+mrn6@chomsky:~/workspace/112/project_01$ cd debug     Debug
+mrn6@chomsky:~/workspace/112/project_01/Debug$ s ls
+Application.d  makefile    PlayListTester.d  Song.o	   subdir.mk
+Application.o  objects.mk  PlayListTester.o  SongTester.d
+main.d	       PlayList.d  project_01	     SongTester.o
+main.o	       PlayList.o  Song.d	     sources.mk
+mrn6@chomsky:~/workspace/112/project_01/Debug$ make all
+make: Nothing to be done for 'all'.
+mrn6@chomsky:~/workspace/112/project_01/Debug$ cd ..
+mrn6@chomsky:~/workspace/112/project_01$ ./Debug/project_01
+Welcome to the Playlist Manager!
+Please enter your selection: 
+
+
+1:  Search playlist for songs by artist 
+2:  Search playlist for songs by year 
+3:  Search playlist for songs with a given phrase in their title 
+4:  Add a song to the playlist 
+5:  Remove a song from the playlist 
+6:  Save the playlist
+0:  Quit 
+
+1
+Please enter one word in the name of the artist: 
+Beatles
+Let It Be by The Beatles released in 1967
+Penny Lane by The Beatles released in 1967
+
+1:  Search playlist for songs by artist 
+2:  Search playlist for songs by year 
+3:  Search playlist for songs with a given phrase in their title 
+4:  Add a song to the playlist 
+5:  Remove a song from the playlist 
+6:  Save the playlist
+0:  Quit 
+
+2
+Please enter the year a song was released: 
+2000
+Maybe Lane by Imaginary released in 2000
+
+1:  Search playlist for songs by artist 
+2:  Search playlist for songs by year 
+3:  Search playlist for songs with a given phrase in their title 
+4:  Add a song to the playlist 
+5:  Remove a song from the playlist 
+6:  Save the playlist
+0:  Quit 
+
+3
+Please enter a keyword to search by title: 
+o Lane
+Penny Lane by The Beatles released in 1967
+Maybe Lane by Imaginary released in 2000
+
+1:  Search playlist for songs by artist 
+2:  Search playlist for songs by year 
+3:  Search playlist for songs with a given phrase in their title 
+4:  Add a song to the playlist 
+5:  Remove a song from the playlist 
+6:  Save the playlist
+0:  Quit 
+
+4
+Please enter the name of the song to be added: 
+Bob
+Please enter the date the song was released: 
+2000 1
+Please enter the artist of the song to be added: 
+Bobby
+
+1:  Search playlist for songs by artist 
+2:  Search playlist for songs by year 
+3:  Search playlist for songs with a given phrase in their title 
+4:  Add a song to the playlist 
+5:  Remove a song from the playlist 
+6:  Save the playlist
+0:  Quit 
+
+5 6
+Enter the name of the file you would like to save it in: 
+S saveFile.txt
+File was saved.
+
+1:  Search playlist for songs by artist 
+2:  Search playlist for songs by year 
+3:  Search playlist for songs with a given phrase in their title 
+4:  Add a song to the playlist 
+5:  Remove a song from the playlist 
+6:  Save the playlist
+0:  Quit 
+
+5
+Please enter the name of the song to be removed: 
+Let i It Be
+Please enter the artist of the song to be removed: 
+The Beatles
+Please enter the date the song was released: 
+1967
+
+1:  Search playlist for songs by artist 
+2:  Search playlist for songs by year 
+3:  Search playlist for songs with a given phrase in their title 
+4:  Add a song to the playlist 
+5:  Remove a song from the playlist 
+6:  Save the playlist
+0:  Quit 
+
+6
+Enter the name of the file you would like to save it in: 
+saveFile.txt
+File was saved.
+
+1:  Search playlist for songs by artist 
+2:  Search playlist for songs by year 
+3:  Search playlist for songs with a given phrase in their title 
+4:  Add a song to the playlist 
+5:  Remove a song from the playlist 
+6:  Save the playlist
+0:  Quit 
+
+0
+mrn6@chomsky:~/workspace/112/project_01$ cat saveFile/.  .txt
+Call Me Maybe
+Carly Rae Jepsen
+2012
+
+Let It Be
+Joan Baez
+1971
+
+Penny Lane
+The Beatles
+1967
+
+Maybe Lane
+Imaginary
+2000
+
+Bob
+Bobby
+2001
+
+mrn6@chomsky:~/workspace/112/project_01$ exit
+
+Script done on Mon 19 Sep 2016 10:15:56 AM EDT
